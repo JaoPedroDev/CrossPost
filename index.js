@@ -7,7 +7,7 @@ async function main() {
     const { browser, page } = await startBrowser();
     await page.goto("https://www.linkedin.com/login");
 
-    await Linkedin.login(page, credentials.user, credentials.password);
+    await Linkedin.login(page, credentials.linkedin.user, credentials.linkedin.password);
 
     await Linkedin.publishPost(page, postInfo.content, postInfo.images, postInfo.videos);
 }
