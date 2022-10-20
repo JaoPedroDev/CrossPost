@@ -1,5 +1,6 @@
 import Puppeteer from "puppeteer";
 import Linkedin from "./linkedin.js";
+import Twitter from "./twitter.js";
 import credentials from "./credentials.json" assert {type: "json"};
 import postInfo from "./postInfo.json" assert {type: "json"};
 
@@ -8,8 +9,12 @@ async function main() {
     await page.goto("https://www.linkedin.com/login");
 
     await Linkedin.login(page, credentials.linkedin.user, credentials.linkedin.password);
-
     await Linkedin.publishPost(page, postInfo.content, postInfo.images, postInfo.videos);
+
+    await page.goto("https://twitter.com/i/flow/login");
+
+    await Twitter.login(page, credentials.twitter.email, credentials.twitter.user, credentials.twitter.password);
+    await Twitter.publishTweet(page, postInfo.content, postInfo.images);
 }
 
 async function startBrowser() {

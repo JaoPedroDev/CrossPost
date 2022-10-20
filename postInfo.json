@@ -1,7 +1,7 @@
 {
-    "content": "Teste de digitação 🐵🦍🦍 % $ # @ 私はジョンです",
+    "content": "Este post foi criado usando o #Puppeteer no Node.js e publicado simultaneamente no Twitter e no Linkedin 🚀🚀🚀",
     "images": [
-        "./media/linkedin.png"
+        "./media/bot_code.png"
     ],
     "videos": []
 }

@@ -15,8 +15,8 @@ async function waitAndType(page, selector, text, logName = "", visible = false) 
     }
 }
 
-async function waitForFocusAndClick(page, selector, logName = "") {
-    await page.waitForSelector(selector);
+async function waitForFocusAndClick(page, selector, logName = "", visible = false) {
+    await page.waitForSelector(selector, { visible: visible });
     await page.click(selector);
     if (logName) {
         console.log(`Clicked on ${logName} element`);
