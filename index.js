@@ -1,27 +1,80 @@
-import Puppeteer from "puppeteer";
-import Linkedin from "./linkedin.js";
-import Twitter from "./twitter.js";
-import credentials from "./credentials.json" assert {type: "json"};
+import puppeteer from "puppeteer";
+import fs from "fs";
+import linkedin from "./linkedin.js";
+import twitter from "./twitter.js";
+import getCredentials from "./getCredentials.js";
 import postInfo from "./postInfo.json" assert {type: "json"};
 
+const DEBUGMODE = true; // Disable click on publish buttons
+const CREDENTIALS_PATH = "./credentials.json";
+
 async function main() {
+    let credentials;
+
+    // Create credentials.json if doesn't exist
+    if (!fs.existsSync(CREDENTIALS_PATH)) {
+        console.log("Credentials not stored locally, creating...");
+
+        const linkedinUser = await getCredentials.askForUser("Linkedin");
+        const linkedinPassword = await getCredentials.askForPassword("Linkedin");
+
+        const twitterUser = await getCredentials.askForUser("Twitter");
+        const twitterPassword = await getCredentials.askForPassword("Twitter");
+
+        const credentialsObj = {
+            linkedin: {
+                user: linkedinUser,
+                password: linkedinPassword
+            },
+            twitter: {
+                user: twitterUser,
+                password: twitterPassword
+            }
+        }
+
+        stringifyAndWrite(CREDENTIALS_PATH, credentialsObj);
+    }
+
+    // Read credentials.json
+    credentials = readAndParse(CREDENTIALS_PATH);
+
     const { browser, page } = await startBrowser();
-    await page.goto("https://www.linkedin.com/login");
 
-    await Linkedin.login(page, credentials.linkedin.user, credentials.linkedin.password);
-    await Linkedin.publishPost(page, postInfo.content, postInfo.images, postInfo.videos);
+    // Linkedin
+    console.log("LinkedIn:");
+    await page.goto("https://www.linkedin.com/");
+    await page.waitForNetworkIdle();
+    // Check if already logged in plataform
+    if (page.url() !== "https://www.linkedin.com/feed/") {
+        console.log("Not logged yet, logging in...");
+        await linkedin.login(page, credentials.linkedin.user, credentials.linkedin.password);
+    } else {
+        console.log("Already logged, skipping...");
+    }
+    await linkedin.publishPost(page, postInfo.content, postInfo.images, DEBUGMODE);
 
+    // Twitter
+    console.log("Twitter:");
     await page.goto("https://twitter.com/i/flow/login");
+    // Check if already logged in plataform
+    await page.waitForNetworkIdle();
+    if (page.url() !== "https://twitter.com/home") {
+        console.log("Not logged yet, loggin in...");
+        await twitter.login(page, credentials.twitter.user, credentials.twitter.password);
+    } else {
+        console.log("Already logged, skipping...");
+    }
+    await twitter.publishTweet(page, postInfo.content, postInfo.images, DEBUGMODE);
 
-    await Twitter.login(page, credentials.twitter.email, credentials.twitter.user, credentials.twitter.password);
-    await Twitter.publishTweet(page, postInfo.content, postInfo.images);
+    browser.close();
 }
 
 async function startBrowser() {
-    const browser = await Puppeteer.launch(
+    const browser = await puppeteer.launch(
         {
-            headless: false
-            // slowMo: 10
+            headless: false,
+            userDataDir: "./user_data"
+            // slowMo: 5
         }
     );
     const page = await browser.newPage();
@@ -40,6 +93,24 @@ async function startBrowser() {
     });
 
     return { browser, page };
+}
+
+function readAndParse(filepath) {
+    try {
+        let jsonString = fs.readFileSync(filepath, "utf-8");
+        let jsonParse = JSON.parse(jsonString);
+        return jsonParse;
+    } catch (err) {
+        console.log(err);
+    }
+}
+
+function stringifyAndWrite(filepath, obj) {
+    try {
+        fs.writeFileSync(filepath, JSON.stringify(obj, null, 2));
+    } catch (err) {
+        console.log(err);
+    }
 }
 
 main();
